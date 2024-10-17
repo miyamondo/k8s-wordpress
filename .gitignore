@@ -1,0 +1,6 @@
+/k8s/secrets.yaml
+/docker/app/wordpress/wp-includes/
+/docker/app/wordpress/wp-content/
+/docker/app/wordpress/wp-admin/
+/docker/app/wordpress/vendor/
+/docker/app/wordpress/.env

@@ -1,0 +1,59 @@
+---
+# ServiceのターゲットとなるNginx
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: dev-menta-k8s
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      initContainers:
+      - name: wordpress-source
+        image: wordpress-app-image:latest
+        imagePullPolicy: Never
+        command: ['sh', '-c', 'cp -r /var/www/dev-k8s.menta.me/. /wordpress']
+        volumeMounts:
+        - name: wordpress-data
+          mountPath: /wordpress
+      containers:
+      - name: wordpress-nginx
+        image: wordpress-nginx-image:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: socket-volume
+          mountPath: /var/run/php-fpm
+        - name: wordpress-data
+          mountPath: /var/www/dev-k8s.menta.me
+      - name: wordpress-app
+        image: wordpress-app-image:latest
+        imagePullPolicy: Never
+        env:
+          - name: MYSQL_HOST
+            value: mysql-service
+          - name: MYSQL_PORT
+            value: "3306"
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: wordpress-secret
+                key: DB_PASSWORD
+        volumeMounts:
+        - name: socket-volume
+          mountPath: /var/run/php-fpm
+      volumes:
+      - name: socket-volume
+        emptyDir: {}
+      - name: wordpress-data
+        emptyDir: {}
